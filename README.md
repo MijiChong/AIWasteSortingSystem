@@ -26,3 +26,5 @@ PyYAML                       6.0.2
 rsa                          4.9
 tqdm                         4.66.5
 uritemplate                  4.1.1
+ 
+ pip install protobuf==4.21.0
