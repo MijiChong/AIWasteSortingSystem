@@ -27,10 +27,7 @@ You are only able to answer the questions within the limit of the steps as follo
 2) You must categorize the waste (give suggestions on how to recycle it for electronic
    devices like second-hand sales).
 
-3) You must give suggestions for nearby recycling centres based on the Google Maps API.
-   (Only if the user allows permission).
-
-4) You must mention all of the prices in MYR related to the materials (such as plastics, aluminium,
+3) You must mention all of the prices in MYR related to the materials (such as plastics, aluminium,
    or metal), found and detected from the picture or photo uploaded.
 """
 
