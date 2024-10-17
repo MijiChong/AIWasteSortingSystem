@@ -80,7 +80,9 @@ st.markdown("""
             max-width: 80%;
         }
     </style>
-""", unsafe_allow_html=True)
+""",
+            unsafe_allow_html=True)
+
 
 # Greeting based on time of day
 def greet_user():
@@ -92,12 +94,14 @@ def greet_user():
     else:
         return "Good evening!"
 
+
 if "greeted" not in st.session_state:
     st.session_state.greeted = False
 
 if not st.session_state.greeted:
     st.write(greet_user())
     st.session_state.greeted = True
+
 
 def generate_response(content, is_image=False):
     try:
@@ -123,6 +127,7 @@ def generate_response(content, is_image=False):
     except Exception as e:
         return f"An error occurred during the upload or generation process: {str(e)}"
 
+
 def main():
     st.title("🌱 Waste Management Chatbot")
 
@@ -136,14 +141,19 @@ def main():
         st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
         for role, message in st.session_state.chat_history:
             if role == "You":
-                st.markdown(f"<div class='user-message'>{message}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='user-message'>{message}</div>",
+                            unsafe_allow_html=True)
             else:
-                st.markdown(f"<div class='assistant-message'>{message}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='assistant-message'>{message}</div>",
+                            unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     # Sidebar for location information and quick actions
     st.sidebar.title("🔧 Quick Actions")
-    quick_queries = ["What can I recycle?", "How do I sort my waste?", "Nearest recycling center"]
+    quick_queries = [
+        "What can I recycle?", "How do I sort my waste?",
+        "Nearest recycling center"
+    ]
     for query in quick_queries:
         if st.sidebar.button(query):
             st.session_state.chat_history.append(("You", query))
@@ -152,7 +162,8 @@ def main():
 
     st.sidebar.title("📍 Location Services")
     if st.sidebar.button("Toggle Location Information"):
-        st.session_state.show_sidebar = not st.session_state.get('show_sidebar', False)
+        st.session_state.show_sidebar = not st.session_state.get(
+            'show_sidebar', False)
 
     if st.session_state.get('show_sidebar', False):
         st.sidebar.header("Location Information")
@@ -178,12 +189,14 @@ def main():
     # Input area with text and file uploader
     st.subheader("Enter your query or upload an image:")
     user_input = st.text_input("Type your question here:")
-    uploaded_file = st.file_uploader("Or upload an image of waste material", type=["jpg", "jpeg", "png"])
+    uploaded_file = st.file_uploader("Or upload an image of waste material",
+                                     type=["jpg", "jpeg", "png"])
 
     # Analyze button to handle input
     if st.button("Analyze"):
         if uploaded_file:
-            st.session_state.chat_history.append(("You (Image)", "Uploaded an image"))
+            st.session_state.chat_history.append(
+                ("You (Image)", "Uploaded an image"))
             response = generate_response(uploaded_file, is_image=True)
             st.session_state.chat_history.append(("Assistant", response))
         elif user_input:
@@ -199,7 +212,9 @@ def main():
         var chatContainer = document.querySelector('.chat-container');
         chatContainer.scrollTop = chatContainer.scrollHeight;
         </script>
-    """, unsafe_allow_html=True)
+    """,
+                unsafe_allow_html=True)
+
 
 if __name__ == "__main__":
     main()
