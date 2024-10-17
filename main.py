@@ -2,10 +2,16 @@ import streamlit as st
 import google.generativeai as genai
 import os
 from datetime import datetime
+import openai
+import requests
+from PIL import Image
+import base64
+import io
 
 # Use environment variables to store API key
 API_KEY = os.environ['Gemini_key']
 genai.configure(api_key=API_KEY)
+openai.api_key = os.environ['OpenAI_Api_Key']
 
 # Initialize the Generative Model with system instructions
 system_instruction = """
@@ -52,13 +58,13 @@ st.markdown("""
             max-width: 1200px;
             margin: 0 auto;
         }
-        .chat-container {
-            max-height: 400px;
-            overflow-y: auto;
-            padding: 20px;
-            border-radius: 10px;
-            background-color: white;
-        }
+        # .chat-container {
+        #     max-height: 400px;
+        #     overflow-y: auto;
+        #     padding: 20px;
+        #     border-radius: 10px;
+        #     # background-color: white;
+        # }
         .user-message {
             color: black;
             background-color: #e3f2fd;
@@ -75,6 +81,11 @@ st.markdown("""
             border-radius: 15px;
             margin: 5px 0;
             max-width: 80%;
+        }
+
+        .send-button {
+            width: 100%; /* Make the button full width */
+            margin-top: 10px; /* Add some space above the button */
         }
     </style>
 """,
@@ -163,25 +174,70 @@ def main():
             'show_sidebar', False)
 
     if st.session_state.get('show_sidebar', False):
-        st.sidebar.header("Location Information")
-        city = st.sidebar.text_input("Enter your city")
-        state = st.sidebar.text_input("Enter your state")
-        postcode = st.sidebar.text_input("Enter your postcode")
+        # Manual location input
+        use_manual_location = st.sidebar.checkbox("Manually Enter Location",
+                                                  value=True)
 
-        if st.sidebar.button("Find Nearby Recycling Centers"):
-            if city and state and postcode:
-                location_info = f"Based on your location in {city}, {state}, {postcode}, here are some local recycling centers you might consider:"
-                nearby_centers = f"""
-                - **City Recycling Center:** 123 Main St, {city}, {state}, {postcode}
-                - **Green Waste Facility:** 456 Oak Ave, {city}, {state}, {postcode}
-                - **Eco Recycle Depot:** 789 Pine Rd, {city}, {state}, {postcode}
-                """
-                st.sidebar.write(location_info)
-                st.sidebar.write(nearby_centers)
-            else:
-                st.sidebar.warning(
-                    "Please fill in all fields to find nearby recycling centers."
+        if use_manual_location:
+            city = st.sidebar.text_input("Enter your city")
+            state = st.sidebar.text_input("Enter your state")
+            postcode = st.sidebar.text_input("Enter your postcode")
+        else:
+            # Automatically detect user's location using their IP address
+            try:
+                response = requests.get('https://ipinfo.io/json')
+                location_data = response.json()
+                city = location_data.get("city", "Unknown City")
+                state = location_data.get("region", "Unknown State")
+                postcode = location_data.get("postal", "Unknown Postcode")
+                st.sidebar.write(f"Detected Location: {city}, {state}, {postcode}")
+            except Exception as e:
+                st.sidebar.error(f"Error detecting location: {str(e)}")
+
+    # Use OpenAI to find nearby recycling centers
+    if st.sidebar.button("Find Nearby Recycling Centers"):
+        if city and state and postcode:
+            location_input = f"Please suggest nearby recycling centers in {city}, {state}, {postcode}."
+
+            try:
+                # Call OpenAI's ChatCompletion with GPT-4 or GPT-3.5-turbo
+                responseRecycle = openai.ChatCompletion.create(
+                    model="gpt-4",  # Or use "gpt-3.5-turbo"
+                    messages=[{
+                        "role":
+                        "system",
+                        "content":
+                        """
+                            Provide a concise list of recycling centers near a specified location, including details such as contact, services, and address. The information must be accurately retrieved from web.
+                            Format should include:
+                            - **Recycling Center Name**
+                            - **Contact:** [Phone Number]
+                            - **Services:** [Service Type]
+                            - **Address:** [Full Address]
+
+                            If no centers are found, mention that clearly.
+                            """
+                    }, {
+                        "role": "user",
+                        "content": location_input
+                    }],
+                    max_tokens=500)
+
+                # Extract and display the response from the AI
+                recycling_centers = responseRecycle['choices'][0]['message'][
+                    'content']
+
+                # Display the nearby recycling centers
+                st.sidebar.write(
+                    f"Based on your location in {city}, {state}, {postcode}, here are some local recycling centers you might consider:"
                 )
+                st.sidebar.write(recycling_centers)
+
+            except Exception as e:
+                st.sidebar.error(f"Error fetching recycling centers: {str(e)}")
+        else:
+            st.sidebar.warning(
+                "Please fill in all fields to find nearby recycling centers.")
 
     # Input area with text and file uploader
     st.subheader("Enter your query or upload an image:")
@@ -190,7 +246,7 @@ def main():
                                      type=["jpg", "jpeg", "png"])
 
     # Analyze button to handle input
-    if st.button("Analyze"):
+    if st.button("Send"):
         if uploaded_file:
             st.session_state.chat_history.append(
                 ("You (Image)", "Uploaded an image"))
